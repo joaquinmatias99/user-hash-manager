@@ -1,0 +1,24 @@
+# Gradle files (except wrapper)
+.gradle/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Node
+node_modules/
+
+# Agent workspace configurations
+.agents/
+skills-lock.json
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
