@@ -1,6 +1,33 @@
 # User Hash Manager - Backend (Spring Boot + MySQL + BCrypt Hashing)
 
-Proyecto didactico en Spring Boot y MySQL para analizar el almacenamiento de contrasenas usando el algoritmo BCrypt.
+Proyecto didáctico en Spring Boot y MySQL para analizar el almacenamiento seguro de contraseñas usando el algoritmo BCrypt, con diseño por capas y actualización automática de seguridad.
+
+---
+
+## Conceptos Clave
+
+### 1. Hash
+Es una función matemática que convierte un texto (como una contraseña) en una firma única e irreversible. No se puede revertir un hash para obtener la contraseña original.
+
+### 2. Sal (Salt)
+Es un texto aleatorio único que se mezcla con la contraseña antes de aplicar el hash. Evita que contraseñas idénticas tengan el mismo hash final en la base de datos, protegiendo contra ataques de diccionario.
+
+### 3. Costo
+Es la cantidad de iteraciones de procesamiento que hace el algoritmo. BCrypt repite el cálculo miles de veces de forma intencional. Esto ralentiza el proceso de cómputo para los hackers que intentan descifrar contraseñas por fuerza bruta.
+
+---
+
+## Actualización Automática de Hash (Re-hasheo)
+
+Cuando subes el factor de costo en el servidor (ej: de 10 a 12), las contraseñas viejas quedan con menor seguridad. 
+
+Para actualizarlas de forma transparente, aprovechamos el momento del login:
+1. El usuario inicia sesión con sus credenciales válidas.
+2. El sistema comprueba si el costo del hash guardado en MySQL es menor al costo actual del servidor.
+3. Si es menor, genera un nuevo hash con el costo actual y actualiza el registro de forma silenciosa.
+
+Esta funcionalidad está controlada mediante la constante:
+`private static final boolean UPGRADE_HASH_ON_LOGIN = true;`
 
 ---
 
@@ -8,11 +35,11 @@ Proyecto didactico en Spring Boot y MySQL para analizar el almacenamiento de con
 
 * Docker / Docker Desktop
 * Java JDK 11 (o superior)
-* Postman (para probar la API)
+* Postman
 
 ---
 
-## Ejecucion
+## Ejecución
 
 ### 1. Base de datos
 Iniciar el contenedor de MySQL en el puerto 3307:
@@ -20,13 +47,13 @@ Iniciar el contenedor de MySQL en el puerto 3307:
 docker compose up -d
 ```
 
-Conexion MySQL:
+Conexión MySQL:
 * Host: localhost:3307
 * Database: user_hash_db
 * User/Password: admin / admin
 
 ### 2. Servidor backend
-Ejecutar la aplicacion:
+Ejecutar la aplicación:
 
 En PowerShell:
 ```powershell
@@ -38,19 +65,19 @@ En CMD:
 gradlew.bat bootRun
 ```
 
-La API correra en `http://localhost:8080`.
+La API correrá en `http://localhost:8080`.
 
 ---
 
 ## Endpoints (/api/users)
 
-| Metodo | Endpoint | Descripcion | Body (JSON) |
+| Método | Endpoint | Descripción | Body (JSON) |
 | :--- | :--- | :--- | :--- |
 | POST | /register | Registro de usuario | {"username": "...", "password": "...", "email": "..."} |
-| POST | /login | Autenticacion | {"username": "...", "password": "..."} |
+| POST | /login | Autenticación (con actualización automática de costo) | {"username": "...", "password": "..."} |
 | GET | /{username} | Detalle de perfil | N/A |
 | GET | / | Listado completo | N/A |
-| PUT | /{username} | Actualizacion de datos | {"email": "...", "password": "..."} |
+| PUT | /{username} | Actualización de datos | {"email": "...", "password": "..."} |
 | DELETE | /{username} | Eliminar registro | N/A |
 
 ---
@@ -60,26 +87,24 @@ La API correra en `http://localhost:8080`.
 En la base de datos, la columna `password_hash` guarda un formato como este:
 `$2a$10$vI8aWBnW3fID.veFTAO.e.zPHzq4C8C.g24f0n.G12b`
 
-Composicion:
-* `$2a$`: Version del algoritmo.
+Composición:
+* `$2a$`: Versión del algoritmo.
 * `$10$`: Costo (2^10 = 1024 iteraciones).
 * `vI8aWBnW3fID.veFTAO.e.`: Sal (salt) de 22 caracteres generada de manera aleatoria.
-* `zPHzq4C8C.g24f0n.G12b`: Hash de la contrasena (31 caracteres).
-
-BCrypt no requiere una columna `salt` separada en la base de datos porque la sal esta integrada en la misma cadena.
+* `zPHzq4C8C.g24f0n.G12b`: Hash de la contraseña (31 caracteres).
 
 ---
 
 ## Columna raw_password_debug_only
 
-La columna `raw_password_debug_only` almacena la contrasena en texto plano.
-* **Nota:** Esto es solo para comparar de forma visual la contraseña plana con la cadena generada de BCrypt en este entorno local de pruebas. En produccion esta columna no debe existir.
+La columna `raw_password_debug_only` almacena la contraseña en texto plano.
+* **Nota:** Esto es solo para comparar de forma visual la contraseña plana con la cadena de BCrypt en este entorno local de pruebas. En producción esta columna no debe existir.
 
 ---
 
-## Calibracion del Costo
+## Calibración del Costo
 
 El factor de costo determina las vueltas de procesamiento del hash.
-* Se debe medir el rendimiento en el servidor destino. El calculo de un hash individual debe tardar entre **100ms y 500ms**.
-* Menos de 100ms debilita la seguridad contra ataques de fuerza bruta. Mas de 500ms sobrecarga el CPU si hay multiples logins simultaneos.
-* A medida que los procesadores y las tarjetas graficas avanzan, el costo debe subirse para mantener el tiempo de calculo constante frente a atacantes con mejor hardware.
+* Se debe medir el rendimiento en el servidor destino. El cálculo de un hash individual debe tardar entre **100ms y 500ms**.
+* Menos de 100ms debilita la seguridad contra ataques de fuerza bruta. Más de 500ms sobrecarga el CPU si hay múltiples logins simultáneos.
+* A medida que los procesadores y las tarjetas gráficas avanzan, el costo debe subirse para mantener el tiempo de cálculo constante frente a atacantes con mejor hardware.
