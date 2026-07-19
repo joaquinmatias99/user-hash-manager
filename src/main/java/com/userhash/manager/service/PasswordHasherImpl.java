@@ -76,4 +76,26 @@ public class PasswordHasherImpl implements PasswordHasher {
             return false;
         }
     }
+
+    /**
+     * Paso 3: Evaluar si el hash actual requiere actualizacion de costo.
+     * Lee la cadena de BCrypt (MCF) y extrae el costo del usuario para compararlo con el costo actual.
+     */
+    @Override
+    public boolean isUpgradeRequired(String expectedHash) {
+        if (expectedHash == null || expectedHash.length() < 6 || !expectedHash.startsWith("$2")) {
+            return false;
+        }
+        
+        try {
+            // El costo en formato BCrypt se encuentra en los caracteres de los indices 4 y 5
+            String costString = expectedHash.substring(4, 6);
+            int hashCost = Integer.parseInt(costString);
+            
+            // Si el costo guardado es menor que el configurado en el servidor, requiere actualizacion
+            return hashCost < BCRYPT_COST;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

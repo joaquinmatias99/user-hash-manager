@@ -11,4 +11,10 @@ public interface PasswordHasher {
      * Verifica si la contrasena ingresada coincide con el hash almacenado en formato BCrypt.
      */
     boolean verifyPassword(String password, String expectedHash);
+
+    /**
+     * Determina si el costo del hash guardado es inferior al costo configurado actualmente,
+     * indicando que se deberia generar un nuevo hash actualizado.
+     */
+    boolean isUpgradeRequired(String expectedHash);
 }

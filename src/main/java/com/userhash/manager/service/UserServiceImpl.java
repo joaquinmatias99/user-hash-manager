@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    private static final boolean UPGRADE_HASH_ON_LOGIN = true;
 
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
@@ -44,7 +45,7 @@ public class UserServiceImpl implements UserService {
         UserEntity userEntity = new UserEntity(
                 userDTO.getUsername(),
                 passwordHash,
-                userDTO.getPassword(), // rawPasswordDebugOnly (para fines didácticos)
+                userDTO.getPassword(), // rawPasswordDebugOnly
                 userDTO.getEmail(),
                 LocalDateTime.now()
         );
@@ -59,6 +60,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public String login(String username, String password) {
         logger.info("[UserService] Intento de login para usuario: {}", username);
 
@@ -72,6 +74,20 @@ public class UserServiceImpl implements UserService {
         if (!isValid) {
             logger.warn("[UserService] Contraseña incorrecta para el usuario: {}", username);
             throw new IllegalArgumentException("Contraseña incorrecta. Credenciales inválidas.");
+        }
+
+        // 3. Buenas practicas: Si el login es exitoso y el hash requiere una actualizacion de costo
+        if (UPGRADE_HASH_ON_LOGIN && passwordHasher.isUpgradeRequired(user.getPasswordHash())) {
+            logger.info("[UserService] Actualizando costo del hash automaticamente en el login para: {}", username);
+            
+            // Generamos un nuevo hash utilizando la contraseña provista durante el login
+            String newHash = passwordHasher.hashPassword(password);
+            
+            user.setPasswordHash(newHash);
+            user.setRawPasswordDebugOnly(password);
+            user.setUpdatedAt(LocalDateTime.now());
+            
+            userRepository.save(user);
         }
 
         logger.info("[UserService] Autenticación exitosa para el usuario: {}", username);
