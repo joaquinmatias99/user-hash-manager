@@ -1,6 +1,14 @@
 # User Hash Manager - Backend (Spring Boot + MySQL + BCrypt Hashing)
 
-Proyecto didáctico en Spring Boot y MySQL para analizar el almacenamiento seguro de contraseñas usando el algoritmo BCrypt, con diseño por capas y actualización automática de seguridad.
+### El Problema: Almacenamiento Inseguro
+Cuando un usuario se registra en una aplicación, escribe una contraseña. Si guardamos esa contraseña en texto plano en la base de datos, cualquier persona con acceso a ella (desarrolladores, administradores de sistemas o un hacker que logre infiltrarse) podría ver y robar las credenciales de todos.
+
+Dado que las personas suelen reutilizar la misma contraseña en múltiples sitios (como correos, bancos y redes sociales), una filtración de base de datos compromete toda su identidad digital en internet.
+
+### La Solución: Hashing y Criptografía
+Para solucionar esto, las aplicaciones modernas **nunca guardan las contraseñas reales**. En su lugar, transforman la contraseña en una firma cifrada irreversible (un hash) antes de escribirla en la base de datos. 
+
+Si un atacante roba la base de datos, solo verá textos incomprensibles. No podrá conocer las contraseñas reales ni utilizarlas para ingresar a otros servicios. Este proyecto implementa **BCrypt**, el estándar de la industria que combina hashing, sal y costo adaptativo para resolver este problema.
 
 ---
 
