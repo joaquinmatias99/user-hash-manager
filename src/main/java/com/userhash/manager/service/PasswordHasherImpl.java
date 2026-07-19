@@ -7,11 +7,7 @@ import org.springframework.stereotype.Component;
 public class PasswordHasherImpl implements PasswordHasher {
 
     /**
-     * Paso 1: Hashear la contrasena con BCrypt.
-     * BCrypt genera internamente una sal aleatoria de 22 caracteres
-     * y realiza 2^10 (1024) iteraciones de hasheo por defecto (costo = 10).
-     * Devuelve una unica cadena de texto que contiene tanto el costo, la sal como el hash final.
-     * Adicionalmente, imprime en consola la descomposicion didactica del hash.
+     * Paso 1: Hashear la contrasena con BCrypt y medir el tiempo de computo.
      */
     @Override
     public String hashPassword(String password) {
@@ -19,7 +15,9 @@ public class PasswordHasherImpl implements PasswordHasher {
             throw new IllegalArgumentException("La contrasena no puede ser nula");
         }
         
+        long startTime = System.currentTimeMillis();
         String hash = BCrypt.hashpw(password, BCrypt.gensalt(10));
+        long durationMs = System.currentTimeMillis() - startTime;
         
         // Log didactico de descomposicion de BCrypt en consola
         try {
@@ -35,6 +33,7 @@ public class PasswordHasherImpl implements PasswordHasher {
             System.out.println("-> Factor de Costo: " + cost + " (2^" + cost + " = 1024 iteraciones)");
             System.out.println("-> Sal (Salt) Embebida (22 caracteres): " + salt);
             System.out.println("-> Firma del Hash (31 caracteres): " + rawHash);
+            System.out.println("-> Tiempo de Computo del Hash: " + durationMs + " ms");
             System.out.println("----------------------------------------------------------------");
         } catch (Exception e) {
             // Se previene cualquier fallo de parsing de cadena para no alterar la ejecucion
@@ -44,9 +43,7 @@ public class PasswordHasherImpl implements PasswordHasher {
     }
 
     /**
-     * Paso 2: Verificar la contrasena.
-     * BCrypt extrae automaticamente los metadatos y la sal
-     * de la cadena "expectedHash" guardada en la base de datos para comparar con la contraseña ingresada.
+     * Paso 2: Verificar la contrasena con BCrypt y medir el tiempo de computo.
      */
     @Override
     public boolean verifyPassword(String password, String expectedHash) {
@@ -55,7 +52,17 @@ public class PasswordHasherImpl implements PasswordHasher {
         }
         
         try {
-            return BCrypt.checkpw(password, expectedHash);
+            long startTime = System.currentTimeMillis();
+            boolean isValid = BCrypt.checkpw(password, expectedHash);
+            long durationMs = System.currentTimeMillis() - startTime;
+            
+            System.out.println("----------------------------------------------------------------");
+            System.out.println("[BCrypt Debug] Verificacion del Hash (Login):");
+            System.out.println("-> Resultado: " + (isValid ? "Credenciales Validas" : "Credenciales Invalidas"));
+            System.out.println("-> Tiempo de Computo del Hash: " + durationMs + " ms");
+            System.out.println("----------------------------------------------------------------");
+            
+            return isValid;
         } catch (Exception e) {
             return false;
         }
