@@ -1,18 +1,10 @@
 package com.userhash.manager.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PasswordHasherImpl implements PasswordHasher {
-
-    private static final Logger logger = LoggerFactory.getLogger(PasswordHasherImpl.class);
-
-    // Cambia este valor de 1 en 1 para calibrar el tiempo de computo en tu hardware.
-    // Rango sugerido: entre 10 y 14.
-    private static final int BCRYPT_COST = 12;
 
     /**
      * Paso 1: Hashear la contrasena con BCrypt y medir el tiempo de computo.
@@ -24,7 +16,7 @@ public class PasswordHasherImpl implements PasswordHasher {
         }
         
         long startTime = System.currentTimeMillis();
-        String hash = BCrypt.hashpw(password, BCrypt.gensalt(BCRYPT_COST));
+        String hash = BCrypt.hashpw(password, BCrypt.gensalt(10));
         long durationMs = System.currentTimeMillis() - startTime;
         
         // Log didactico de descomposicion de BCrypt en consola
@@ -34,17 +26,15 @@ public class PasswordHasherImpl implements PasswordHasher {
             String salt = hash.substring(7, 29);
             String rawHash = hash.substring(29);
             
-            // Usamos el logger con un unico string multilinea para no repetir el prefijo de Spring en cada renglon
-            logger.info("\n----------------------------------------------------------------" +
-                        "\n[BCrypt Debug] Descomposicion del Hash Generado:" +
-                        "\n-> Hash Completo: {}" +
-                        "\n-> Version del Algoritmo: {}" +
-                        "\n-> Factor de Costo: {} (2^{} = {} iteraciones)" +
-                        "\n-> Sal (Salt) Embebida (22 caracteres): {}" +
-                        "\n-> Firma del Hash (31 caracteres): {}" +
-                        "\n-> Tiempo de Computo del Hash: {} ms" +
-                        "\n----------------------------------------------------------------",
-                        hash, version, cost, cost, (int) Math.pow(2, Integer.parseInt(cost)), salt, rawHash, durationMs);
+            System.out.println("----------------------------------------------------------------");
+            System.out.println("[BCrypt Debug] Descomposicion del Hash Generado:");
+            System.out.println("-> Hash Completo: " + hash);
+            System.out.println("-> Version del Algoritmo: " + version);
+            System.out.println("-> Factor de Costo: " + cost + " (2^" + cost + " = 1024 iteraciones)");
+            System.out.println("-> Sal (Salt) Embebida (22 caracteres): " + salt);
+            System.out.println("-> Firma del Hash (31 caracteres): " + rawHash);
+            System.out.println("-> Tiempo de Computo del Hash: " + durationMs + " ms");
+            System.out.println("----------------------------------------------------------------");
         } catch (Exception e) {
             // Se previene cualquier fallo de parsing de cadena para no alterar la ejecucion
         }
@@ -66,12 +56,11 @@ public class PasswordHasherImpl implements PasswordHasher {
             boolean isValid = BCrypt.checkpw(password, expectedHash);
             long durationMs = System.currentTimeMillis() - startTime;
             
-            logger.info("\n----------------------------------------------------------------" +
-                        "\n[BCrypt Debug] Verificacion del Hash (Login):" +
-                        "\n-> Resultado: {}" +
-                        "\n-> Tiempo de Computo del Hash: {} ms" +
-                        "\n----------------------------------------------------------------",
-                        isValid ? "Credenciales Validas" : "Credenciales Invalidas", durationMs);
+            System.out.println("----------------------------------------------------------------");
+            System.out.println("[BCrypt Debug] Verificacion del Hash (Login):");
+            System.out.println("-> Resultado: " + (isValid ? "Credenciales Validas" : "Credenciales Invalidas"));
+            System.out.println("-> Tiempo de Computo del Hash: " + durationMs + " ms");
+            System.out.println("----------------------------------------------------------------");
             
             return isValid;
         } catch (Exception e) {
